@@ -299,6 +299,18 @@ inline iterator Node::end() {
   return m_pNode ? iterator(m_pNode->end(), m_pMemory) : iterator();
 }
 
+// aliasing
+inline bool Node::is_alias() const{
+  if (!m_isValid)
+    throw InvalidNode(m_invalidKey);
+  return m_pNode ? m_pNode->is_alias() : false;
+}
+inline anchor_t Node::alias_id() const {
+  if (!m_isValid)
+    throw InvalidNode(m_invalidKey);
+  return m_pNode ? m_pNode->alias_id() : NullAnchor;
+}
+
 // sequence
 template <typename T>
 inline void Node::push_back(const T& rhs) {

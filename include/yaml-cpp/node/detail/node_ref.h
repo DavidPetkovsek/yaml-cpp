@@ -50,6 +50,11 @@ class node_ref {
   }
   node_iterator end() { return m_pData->end(); }
 
+  // aliasing
+  bool is_alias() const { return m_pData->is_alias(); }
+  anchor_t alias_id() const { return m_pData->alias_id(); }
+  void set_alias_id(anchor_t anchor) { m_pData->set_alias_id(anchor); }
+
   // sequence
   void push_back(node& node, shared_memory_holder pMemory) {
     m_pData->push_back(node, pMemory);

@@ -59,6 +59,11 @@ class YAML_CPP_API node_data {
   const_node_iterator end() const;
   node_iterator end();
 
+  // aliasing
+  bool is_alias() const;
+  anchor_t alias_id() const;
+  void set_alias_id(anchor_t anchor);
+
   // sequence
   void push_back(node& node, const shared_memory_holder& pMemory);
   void insert(node& key, node& value, const shared_memory_holder& pMemory);
@@ -106,6 +111,9 @@ class YAML_CPP_API node_data {
 
   // scalar
   std::string m_scalar;
+
+  // aliasing
+  anchor_t m_alias_id;
 
   // sequence
   using node_seq = std::vector<node *>;

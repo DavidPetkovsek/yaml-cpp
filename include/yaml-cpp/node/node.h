@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "yaml-cpp/anchor.h"
 #include "yaml-cpp/dll.h"
 #include "yaml-cpp/emitterstyle.h"
 #include "yaml-cpp/mark.h"
@@ -91,6 +92,10 @@ class YAML_CPP_API Node {
 
   const_iterator end() const;
   iterator end();
+
+  // aliasing
+  bool is_alias() const;
+  anchor_t alias_id() const;
 
   // sequence
   template <typename T>

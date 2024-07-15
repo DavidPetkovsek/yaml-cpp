@@ -109,6 +109,11 @@ class node {
     return static_cast<const node_ref&>(*m_pRef).end();
   }
   node_iterator end() { return m_pRef->end(); }
+  
+  // aliasing
+  bool is_alias() const { return m_pRef->is_alias(); }
+  anchor_t alias_id() const { return m_pRef->alias_id(); }
+  void set_alias_id(anchor_t anchor) { m_pRef->set_alias_id(anchor); }
 
   // sequence
   void push_back(node& input, shared_memory_holder pMemory) {

@@ -27,6 +27,7 @@ node_data::node_data()
       m_tag{},
       m_style(EmitterStyle::Default),
       m_scalar{},
+      m_alias_id{NullAnchor},
       m_sequence{},
       m_seqSize(0),
       m_map{},
@@ -174,6 +175,11 @@ node_iterator node_data::end() {
       return {};
   }
 }
+
+// aliasing
+bool node_data::is_alias() const { return m_alias_id != NullAnchor; }
+anchor_t node_data::alias_id() const { return m_alias_id; }
+void node_data::set_alias_id(anchor_t anchor) { m_alias_id = anchor; }
 
 // sequence
 void node_data::push_back(node& node,

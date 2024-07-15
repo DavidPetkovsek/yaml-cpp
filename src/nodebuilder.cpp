@@ -128,6 +128,7 @@ void NodeBuilder::Pop() {
 void NodeBuilder::RegisterAnchor(anchor_t anchor, detail::node& node) {
   if (anchor) {
     assert(anchor == m_anchors.size());
+    node.set_alias_id(anchor);
     m_anchors.push_back(&node);
   }
 }
