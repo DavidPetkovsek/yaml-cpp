@@ -167,6 +167,12 @@ TEST(LoadNodeTest, CloneMap) {
 TEST(LoadNodeTest, CloneAlias) {
   Node node = Load("&foo [*foo]");
   Node clone = Clone(node);
+  EXPECT_TRUE(node.is_alias());
+  EXPECT_TRUE(node[0].is_alias());
+  EXPECT_TRUE(clone.is_alias());
+  EXPECT_TRUE(clone[0].is_alias());
+  EXPECT_EQ(node.alias_id(), node[0].alias_id());
+  EXPECT_EQ(clone.alias_id(), clone[0].alias_id());
   EXPECT_FALSE(clone == node);
   EXPECT_EQ(NodeType::Sequence, clone.Type());
   EXPECT_EQ(clone.size(), node.size());
