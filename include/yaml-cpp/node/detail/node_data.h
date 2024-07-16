@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <typeindex>
 
 #include "yaml-cpp/dll.h"
 #include "yaml-cpp/node/detail/node_iterator.h"
@@ -40,6 +41,8 @@ class YAML_CPP_API node_data {
   void set_null();
   void set_scalar(const std::string& scalar);
   void set_style(EmitterStyle::value style);
+
+  std::shared_ptr<void> &get_converter_data(const std::type_index &t_index) const;
 
   bool is_defined() const { return m_isDefined; }
   const Mark& mark() const { return m_mark; }
@@ -108,6 +111,7 @@ class YAML_CPP_API node_data {
   NodeType::value m_type;
   std::string m_tag;
   EmitterStyle::value m_style;
+  mutable std::map<std::type_index, std::shared_ptr<void>> m_converter_data;
 
   // scalar
   std::string m_scalar;

@@ -85,6 +85,13 @@ inline NodeType::value Node::Type() const {
   return m_pNode ? m_pNode->type() : NodeType::Null;
 }
 
+template <typename T>
+inline std::shared_ptr<void> &Node::get_converter_data() const { return get_converter_data(std::type_index(typeid(T))); }
+inline std::shared_ptr<void> &Node::get_converter_data(const std::type_index &t_index) const{
+  EnsureNodeExists();
+  return m_pNode->get_converter_data(t_index);
+}
+
 // access
 
 // template helpers

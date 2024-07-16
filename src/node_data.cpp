@@ -26,6 +26,7 @@ node_data::node_data()
       m_type(NodeType::Null),
       m_tag{},
       m_style(EmitterStyle::Default),
+      m_converter_data{},
       m_scalar{},
       m_alias_id{NullAnchor},
       m_sequence{},
@@ -75,6 +76,10 @@ void node_data::set_type(NodeType::value type) {
 void node_data::set_tag(const std::string& tag) { m_tag = tag; }
 
 void node_data::set_style(EmitterStyle::value style) { m_style = style; }
+
+std::shared_ptr<void> &node_data::get_converter_data(const std::type_index &t_index) const {
+  return m_converter_data[t_index]; // If t_info doesn't exist a shared_ptr->nullptr ref is returned otherwise it is the existing shared_ptr->void ref
+}
 
 void node_data::set_null() {
   m_isDefined = true;

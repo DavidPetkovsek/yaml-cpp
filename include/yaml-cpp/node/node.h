@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <typeindex>
 
 #include "yaml-cpp/anchor.h"
 #include "yaml-cpp/dll.h"
@@ -57,6 +58,10 @@ class YAML_CPP_API Node {
   bool IsScalar() const { return Type() == NodeType::Scalar; }
   bool IsSequence() const { return Type() == NodeType::Sequence; }
   bool IsMap() const { return Type() == NodeType::Map; }
+
+  template <typename T>
+  std::shared_ptr<void> &get_converter_data() const;
+  std::shared_ptr<void> &get_converter_data(const std::type_index &t_index) const;
 
   // bool conversions
   explicit operator bool() const { return IsDefined(); }

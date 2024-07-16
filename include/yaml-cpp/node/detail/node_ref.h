@@ -37,6 +37,8 @@ class node_ref {
   void set_scalar(const std::string& scalar) { m_pData->set_scalar(scalar); }
   void set_style(EmitterStyle::value style) { m_pData->set_style(style); }
 
+  std::shared_ptr<void> &get_converter_data(const std::type_index &t_index) const { return m_pData->get_converter_data(t_index); }
+
   // size/iterator
   std::size_t size() const { return m_pData->size(); }
 

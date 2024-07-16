@@ -39,6 +39,8 @@ class node {
   const std::string& tag() const { return m_pRef->tag(); }
   EmitterStyle::value style() const { return m_pRef->style(); }
 
+  std::shared_ptr<void> &get_converter_data(const std::type_index &t_index) const { return m_pRef->get_converter_data(t_index); }
+
   template <typename T>
   bool equals(const T& rhs, shared_memory_holder pMemory);
   bool equals(const char* rhs, shared_memory_holder pMemory);
