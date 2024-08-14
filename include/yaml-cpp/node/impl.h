@@ -92,13 +92,19 @@ inline std::shared_ptr<void> &Node::get_converter_data(const std::type_index &t_
   return m_pNode->get_converter_data(t_index);
 }
 
+template <typename T>
+struct is_tuple : std::false_type {};
+
+template <typename... Ts>
+struct is_tuple<std::tuple<Ts...>> : std::true_type {};
+
 // Helper to detect if convert<T>::emplace exists
 template <typename T, typename = void>
 struct has_emplace : std::false_type {};
 
 template <typename T>
 struct has_emplace<T, typename std::enable_if<
-    std::is_same<decltype(convert<T>::emplace(std::declval<const Node&>())), T>::value>::type> : std::true_type {};
+    is_tuple<decltype(convert<T>::emplace(std::declval<const Node&>()))>::value>::type> : std::true_type {};
 
 
 // access
@@ -120,7 +126,7 @@ private:
   // If convert<T>::emplace exists
   T call_emplace_or_decode(const S& fallback, std::true_type) const {
     try {
-      return convert<T>::emplace(node);
+      return createInstanceFromTuple<T>(convert<T>::emplace(node));
     } catch (...) {
       return fallback;
     }
@@ -132,6 +138,12 @@ private:
     if (convert<T>::decode(node, t))
       return t;
     return fallback;
+  }
+
+  template <typename T, typename Tuple>
+  T createInstanceFromTuple(Tuple&& t) {
+      constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
+      return createInstanceFromTupleImpl<T>(std::forward<Tuple>(t), std::make_index_sequence<size>{});
   }
 };
 
@@ -165,7 +177,7 @@ private:
   // If convert<T>::emplace exists
   T call_emplace_or_decode(std::true_type) const {
     try {
-      return convert<T>::emplace(node);
+      return createInstanceFromTuple<T>(convert<T>::emplace(node));
     } catch (...) {
       throw TypedBadConversion<T>(node.Mark());
     }
@@ -177,6 +189,12 @@ private:
     if (convert<T>::decode(node, t))
       return t;
     throw TypedBadConversion<T>(node.Mark());
+  }
+
+  template <typename T, typename Tuple>
+  T createInstanceFromTuple(Tuple&& t) {
+      constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
+      return createInstanceFromTupleImpl<T>(std::forward<Tuple>(t), std::make_index_sequence<size>{});
   }
 };
 
