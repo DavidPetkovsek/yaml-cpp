@@ -92,6 +92,15 @@ inline std::shared_ptr<void> &Node::get_converter_data(const std::type_index &t_
   return m_pNode->get_converter_data(t_index);
 }
 
+// Helper to detect if convert<T>::emplace exists
+template <typename T, typename = void>
+struct has_emplace : std::false_type {};
+
+template <typename T>
+struct has_emplace<T, typename std::enable_if<
+    std::is_same<decltype(convert<T>::emplace(std::declval<const Node&>())), T>::value>::type> : std::true_type {};
+
+
 // access
 
 // template helpers
@@ -104,6 +113,21 @@ struct as_if {
     if (!node.m_pNode)
       return fallback;
 
+    return call_emplace_or_decode(fallback, std::integral_constant<bool, has_emplace<T>::value>());
+  }
+
+private:
+  // If convert<T>::emplace exists
+  T call_emplace_or_decode(const S& fallback, std::true_type) const {
+    try {
+      return convert<T>::emplace(node);
+    } catch (...) {
+      return fallback;
+    }
+  }
+
+  // If convert<T>::emplace does not exist
+  T call_emplace_or_decode(const S& fallback, std::false_type) const {
     T t = fallback;
     if (convert<T>::decode(node, t))
       return t;
@@ -134,6 +158,21 @@ struct as_if<T, void> {
     if (!node.m_pNode)
       throw TypedBadConversion<T>(node.Mark());
 
+    return call_emplace_or_decode(std::integral_constant<bool, has_emplace<T>::value>());
+  }
+
+private:
+  // If convert<T>::emplace exists
+  T call_emplace_or_decode(std::true_type) const {
+    try {
+      return convert<T>::emplace(node);
+    } catch (...) {
+      throw TypedBadConversion<T>(node.Mark());
+    }
+  }
+
+  // If convert<T>::emplace does not exist
+  T call_emplace_or_decode(std::false_type) const {
     T t;
     if (convert<T>::decode(node, t))
       return t;
