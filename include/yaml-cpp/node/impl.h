@@ -140,10 +140,24 @@ private:
     return fallback;
   }
 
-  template <typename T, typename Tuple>
-  T createInstanceFromTuple(Tuple&& t) {
+  template <std::size_t... Is>
+  struct index_sequence {};
+
+  template <std::size_t N, std::size_t... Is>
+  struct make_index_sequence : make_index_sequence<N-1, N-1, Is...> {};
+
+  template <std::size_t... Is>
+  struct make_index_sequence<0, Is...> : index_sequence<Is...> {};
+
+  template <typename K, typename Tuple, std::size_t... I>
+  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) {
+      return K(std::get<I>(std::forward<Tuple>(t))...);
+  }
+
+  template <typename K, typename Tuple>
+  K createInstanceFromTuple(Tuple&& t) {
       constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
-      return createInstanceFromTupleImpl<T>(std::forward<Tuple>(t), std::make_index_sequence<size>{});
+      return createInstanceFromTupleImpl<K>(std::forward<Tuple>(t), make_index_sequence<size>{});
   }
 };
 
@@ -191,10 +205,24 @@ private:
     throw TypedBadConversion<T>(node.Mark());
   }
 
-  template <typename T, typename Tuple>
-  T createInstanceFromTuple(Tuple&& t) {
+  template <std::size_t... Is>
+  struct index_sequence {};
+
+  template <std::size_t N, std::size_t... Is>
+  struct make_index_sequence : make_index_sequence<N-1, N-1, Is...> {};
+
+  template <std::size_t... Is>
+  struct make_index_sequence<0, Is...> : index_sequence<Is...> {};
+
+  template <typename K, typename Tuple, std::size_t... I>
+  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) {
+      return K(std::get<I>(std::forward<Tuple>(t))...);
+  }
+
+  template <typename K, typename Tuple>
+  K createInstanceFromTuple(Tuple&& t) {
       constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
-      return createInstanceFromTupleImpl<T>(std::forward<Tuple>(t), std::make_index_sequence<size>{});
+      return createInstanceFromTupleImpl<K>(std::forward<Tuple>(t), make_index_sequence<size>{});
   }
 };
 
