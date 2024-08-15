@@ -150,12 +150,12 @@ private:
   struct make_index_sequence<0, Is...> : index_sequence<Is...> {};
 
   template <typename K, typename Tuple, std::size_t... I>
-  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) {
+  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) const {
       return K(std::get<I>(std::forward<Tuple>(t))...);
   }
 
   template <typename K, typename Tuple>
-  K createInstanceFromTuple(Tuple&& t) {
+  K createInstanceFromTuple(Tuple&& t) const {
       constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
       return createInstanceFromTupleImpl<K>(std::forward<Tuple>(t), make_index_sequence<size>{});
   }
@@ -215,12 +215,12 @@ private:
   struct make_index_sequence<0, Is...> : index_sequence<Is...> {};
 
   template <typename K, typename Tuple, std::size_t... I>
-  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) {
+  K createInstanceFromTupleImpl(Tuple&& t, index_sequence<I...>) const {
       return K(std::get<I>(std::forward<Tuple>(t))...);
   }
 
   template <typename K, typename Tuple>
-  K createInstanceFromTuple(Tuple&& t) {
+  K createInstanceFromTuple(Tuple&& t) const {
       constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
       return createInstanceFromTupleImpl<K>(std::forward<Tuple>(t), make_index_sequence<size>{});
   }
