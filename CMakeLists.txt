@@ -7,6 +7,10 @@ cmake_minimum_required(VERSION 3.4...3.14)
 if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
 endif()
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+endif()
 
 project(YAML_CPP VERSION 0.8.0 LANGUAGES CXX)
 
@@ -38,7 +42,7 @@ cmake_dependent_option(YAML_MSVC_SHARED_RT
   "CMAKE_SYSTEM_NAME MATCHES Windows" OFF)
 set(YAML_CPP_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/yaml-cpp"
   CACHE STRING "Path to install the CMake package to")
- 
+
 if (YAML_CPP_FORMAT_SOURCE)
     find_program(YAML_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 endif()
@@ -102,11 +106,11 @@ target_include_directories(yaml-cpp
   PRIVATE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
-if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set_target_properties(yaml-cpp
-    PROPERTIES
-      CXX_STANDARD 11)
-endif()
+# if (NOT DEFINED CMAKE_CXX_STANDARD)
+#   set_target_properties(yaml-cpp
+#     PROPERTIES
+#       CXX_STANDARD 20)
+# endif()
 
 if(YAML_CPP_MAIN_PROJECT)
   target_compile_options(yaml-cpp
