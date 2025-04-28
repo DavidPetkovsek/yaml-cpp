@@ -37,6 +37,170 @@ template <typename T>
 struct convert;
 }  // namespace YAML
 
+#include <optional>
+#include <set>
+#include <unordered_set>
+#include <memory>
+
+namespace YAML{
+    template <typename T>
+    concept YamlDecodable = requires {
+        YAML::convert<T>::decode;                    // Check for YAML-CPP decode support
+    };
+    template <typename T>
+    concept YamlEncodable = requires {
+        YAML::convert<T>::encode;           // Check for YAML-CPP encode support
+    };
+    template <typename T>
+    concept YamlEmplaceAble = requires {
+        YAML::convert<T>::emplace;           // Check for YAML-CPP encode support
+    };
+    template <typename T>
+    concept YamlConvertable = (YamlDecodable<T> || YamlEmplaceAble<T>) && YamlEncodable<T>;
+
+    template <typename T>
+    concept YamlAsDecodable = (YamlDecodable<T> && std::is_default_constructible_v<T>) || YamlEmplaceAble<T>;
+    template <typename T>
+    concept YamlAsConvertable = YamlAsDecodable<T> && YamlEncodable<T>;
+
+    template <typename T>
+    struct as_if<T, std::optional<T>> {
+    explicit as_if(const Node &node) :
+        node(node) {
+    }
+    const Node &node;
+
+    std::optional<T> operator()() const {
+        if(!node || node.m_pNode == nullptr || node.IsNull())
+            return std::nullopt;
+        std::optional<T> result;
+        result = node.as<T>();
+        return result;
+    }
+    };
+
+    // There is already a string partial specialization, so we need a full specialization here
+    template <>
+    struct as_if<std::string, std::optional<std::string>> {
+    explicit as_if(const Node &node) :
+        node(node) {
+    }
+    const Node &node;
+
+    std::optional<std::string> operator()() const {
+        if(!node || node.m_pNode == nullptr || node.IsNull())
+            return std::nullopt;
+        std::optional<std::string> result;
+        result = node.as<std::string>();
+        return result;
+    }
+    };
+}// namespace YAML
+
+
+namespace YAML{
+    template<typename T>
+    struct convert<std::optional<T>> {
+        static bool decode(const Node& node, std::optional<T>& rhs) requires YAML::YamlAsDecodable<T> {
+            if(!node || node.IsNull()){
+                rhs = std::nullopt;
+                return true;
+            }
+            rhs = node.as<T>();
+            return true;
+        }
+
+        static Node encode(const std::optional<T>& rhs) requires YAML::YamlEncodable<T> {
+            Node node;
+            if (rhs.has_value()) // if false then node is just null
+                node = rhs.value();
+            else
+                node = YAML::Null;
+            return node;
+        }
+    };
+
+    template<class Key, class Compare, class Allocator>
+    struct convert<std::set<Key, Compare, Allocator>> {
+        static bool decode(const Node& node, std::set<Key, Compare, Allocator>& rhs) requires YAML::YamlAsDecodable<Key> {
+            if(!node.IsSequence())
+                return false; // it is not a list so error
+            rhs.clear();
+            for (const auto& element : node)
+                rhs.insert(element.as<Key>());
+            return true;
+        }
+
+        static Node encode(const std::set<Key, Compare, Allocator>& rhs) requires YAML::YamlEncodable<Key> {
+            Node node{YAML::NodeType::Sequence};
+            for(const auto &k : rhs)
+                node.push_back(k);
+            return node;
+        }
+    };
+
+    template<class Key, class Hash, class KeyEqual, class Allocator>
+    struct convert<std::unordered_set<Key, Hash, KeyEqual, Allocator>> {
+        static bool decode(const Node& node, std::unordered_set<Key, Hash, KeyEqual, Allocator>& rhs) requires YAML::YamlAsDecodable<Key> {
+            if(!node.IsSequence())
+                return false; // it is not a list so error
+            rhs.clear();
+            for (const auto& element : node)
+                rhs.insert(element.as<Key>());
+            return true;
+        }
+
+        static Node encode(const std::unordered_set<Key, Hash, KeyEqual, Allocator>& rhs) requires YAML::YamlEncodable<Key> {
+            Node node{YAML::NodeType::Sequence};
+            for(const auto &k : rhs)
+                node.push_back(k);
+            return node;
+        }
+    };
+
+    template<typename T>
+    struct convert<std::shared_ptr<T>> {
+        static bool decode(const Node& node, std::shared_ptr<T>& rhs) requires (YAML::YamlEmplaceAble<T> || (YAML::YamlAsDecodable<T> && std::copy_constructible<T>)) {
+            if(node.is_alias()){
+                std::shared_ptr<void> &underlying = node.get_converter_data<std::shared_ptr<T>>();
+                if(underlying == nullptr){
+                    if(!node || node.IsNull())
+                        underlying = nullptr;
+                    else{
+                        if constexpr (YamlEmplaceAble<T>){
+                            underlying = std::apply([](auto&&... args){return std::make_shared<T>(std::forward<decltype(args)>(args)...);}, YAML::convert<T>::emplace(node));
+                        }else{
+                            underlying = std::make_shared<T>(node.as<T>());
+                        }
+                    }
+                }
+                rhs = std::static_pointer_cast<T>(underlying);
+                return true;
+            }
+            if(!node || node.IsNull()){
+                rhs = nullptr;
+                return true;
+            }
+
+            if constexpr (YamlEmplaceAble<T>){
+                rhs = std::apply([](auto&&... args){return std::make_shared<T>(std::forward<decltype(args)>(args)...);}, YAML::convert<T>::emplace(node));
+            }else{
+                rhs = std::make_shared<T>(node.as<T>());
+            }
+            return true;
+        }
+
+        static Node encode(const std::shared_ptr<T>& rhs) requires YAML::YamlEncodable<T> {
+            Node node;
+            if (rhs == nullptr)
+                node = YAML::Null;
+            else
+                node = *rhs;
+            return node;
+        }
+    };
+}// namespace YAML
+
 namespace YAML {
 namespace conversion {
 inline bool IsInfinity(const std::string& input) {
@@ -250,14 +414,14 @@ struct convert<bool> {
 // std::map
 template <typename K, typename V, typename C, typename A>
 struct convert<std::map<K, V, C, A>> {
-  static Node encode(const std::map<K, V, C, A>& rhs) {
+  static Node encode(const std::map<K, V, C, A>& rhs) requires (YAML::YamlEncodable<K> && YAML::YamlEncodable<V>) {
     Node node(NodeType::Map);
     for (const auto& element : rhs)
       node.force_insert(element.first, element.second);
     return node;
   }
 
-  static bool decode(const Node& node, std::map<K, V, C, A>& rhs) {
+  static bool decode(const Node& node, std::map<K, V, C, A>& rhs) requires (YAML::YamlAsDecodable<K> &&  YAML::YamlAsDecodable<V>) {
     if (!node.IsMap())
       return false;
 
@@ -276,14 +440,14 @@ struct convert<std::map<K, V, C, A>> {
 // std::unordered_map
 template <typename K, typename V, typename H, typename P, typename A>
 struct convert<std::unordered_map<K, V, H, P, A>> {
-  static Node encode(const std::unordered_map<K, V, H, P, A>& rhs) {
+  static Node encode(const std::unordered_map<K, V, H, P, A>& rhs) requires (YAML::YamlEncodable<K> && YAML::YamlEncodable<V>) {
     Node node(NodeType::Map);
     for (const auto& element : rhs)
       node.force_insert(element.first, element.second);
     return node;
   }
 
-  static bool decode(const Node& node, std::unordered_map<K, V, H, P, A>& rhs) {
+  static bool decode(const Node& node, std::unordered_map<K, V, H, P, A>& rhs) requires (YAML::YamlAsDecodable<K> && YAML::YamlAsDecodable<V>) {
     if (!node.IsMap())
       return false;
 
@@ -302,14 +466,14 @@ struct convert<std::unordered_map<K, V, H, P, A>> {
 // std::vector
 template <typename T, typename A>
 struct convert<std::vector<T, A>> {
-  static Node encode(const std::vector<T, A>& rhs) {
+  static Node encode(const std::vector<T, A>& rhs) requires YAML::YamlEncodable<T> {
     Node node(NodeType::Sequence);
     for (const auto& element : rhs)
       node.push_back(element);
     return node;
   }
 
-  static bool decode(const Node& node, std::vector<T, A>& rhs) {
+  static bool decode(const Node& node, std::vector<T, A>& rhs) requires YAML::YamlAsDecodable<T> {
     if (!node.IsSequence())
       return false;
 
@@ -328,14 +492,14 @@ struct convert<std::vector<T, A>> {
 // std::list
 template <typename T, typename A>
 struct convert<std::list<T,A>> {
-  static Node encode(const std::list<T,A>& rhs) {
+  static Node encode(const std::list<T,A>& rhs) requires YAML::YamlEncodable<T> {
     Node node(NodeType::Sequence);
     for (const auto& element : rhs)
       node.push_back(element);
     return node;
   }
 
-  static bool decode(const Node& node, std::list<T,A>& rhs) {
+  static bool decode(const Node& node, std::list<T,A>& rhs) requires YAML::YamlAsDecodable<T> {
     if (!node.IsSequence())
       return false;
 
@@ -354,7 +518,7 @@ struct convert<std::list<T,A>> {
 // std::array
 template <typename T, std::size_t N>
 struct convert<std::array<T, N>> {
-  static Node encode(const std::array<T, N>& rhs) {
+  static Node encode(const std::array<T, N>& rhs) requires YAML::YamlEncodable<T> {
     Node node(NodeType::Sequence);
     for (const auto& element : rhs) {
       node.push_back(element);
@@ -362,7 +526,7 @@ struct convert<std::array<T, N>> {
     return node;
   }
 
-  static bool decode(const Node& node, std::array<T, N>& rhs) {
+  static bool decode(const Node& node, std::array<T, N>& rhs) requires YAML::YamlAsDecodable<T> {
     if (!isNodeValid(node)) {
       return false;
     }
@@ -388,7 +552,7 @@ struct convert<std::array<T, N>> {
 // std::valarray
 template <typename T>
 struct convert<std::valarray<T>> {
-  static Node encode(const std::valarray<T>& rhs) {
+  static Node encode(const std::valarray<T>& rhs) requires YAML::YamlEncodable<T> {
     Node node(NodeType::Sequence);
     for (const auto& element : rhs) {
       node.push_back(element);
@@ -396,7 +560,7 @@ struct convert<std::valarray<T>> {
     return node;
   }
 
-  static bool decode(const Node& node, std::valarray<T>& rhs) {
+  static bool decode(const Node& node, std::valarray<T>& rhs) requires YAML::YamlAsDecodable<T> {
     if (!node.IsSequence()) {
       return false;
     }
@@ -418,14 +582,14 @@ struct convert<std::valarray<T>> {
 // std::pair
 template <typename T, typename U>
 struct convert<std::pair<T, U>> {
-  static Node encode(const std::pair<T, U>& rhs) {
+  static Node encode(const std::pair<T, U>& rhs) requires (YAML::YamlEncodable<T> && YAML::YamlEncodable<U>) {
     Node node(NodeType::Sequence);
     node.push_back(rhs.first);
     node.push_back(rhs.second);
     return node;
   }
 
-  static bool decode(const Node& node, std::pair<T, U>& rhs) {
+  static bool decode(const Node& node, std::pair<T, U>& rhs) requires (YAML::YamlAsDecodable<T> && YAML::YamlAsDecodable<U>) {
     if (!node.IsSequence())
       return false;
     if (node.size() != 2)
