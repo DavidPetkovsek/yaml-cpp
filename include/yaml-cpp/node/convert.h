@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <valarray>
 #include <vector>
+#include <filesystem>
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 #include <string_view>
@@ -608,6 +609,23 @@ struct convert<std::pair<T, U>> {
 #else
     rhs.second = node[1].as<U>();
 #endif
+    return true;
+  }
+};
+
+// std::filesystem::path
+template<>
+struct convert<std::filesystem::path> {
+  static Node encode(const std::filesystem::path &rhs) {
+    Node node;
+    node = rhs.string();
+    return node;
+  }
+
+  static bool decode(const Node& node, std::filesystem::path &rhs) {
+    if(!node.IsScalar())
+      return false;
+    rhs = node.as<std::string>();
     return true;
   }
 };
