@@ -181,8 +181,8 @@ struct as_if<T, void> {
   const Node& node;
 
   T operator()() const {
-    if (!node.m_pNode)
-      throw TypedBadConversion<T>(node.Mark());
+    if (!node.m_pNode) // no fallback
+      throw InvalidNode(node.m_invalidKey);
 
     return call_emplace_or_decode(std::integral_constant<bool, has_emplace<T>::value>());
   }
@@ -232,6 +232,8 @@ struct as_if<std::string, void> {
   const Node& node;
 
   std::string operator()() const {
+    if (node.Type() == NodeType::Undefined) // no fallback
+      throw InvalidNode(node.m_invalidKey);
     if (node.Type() == NodeType::Null)
       return "null";
     if (node.Type() != NodeType::Scalar)

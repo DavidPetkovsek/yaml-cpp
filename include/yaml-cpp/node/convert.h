@@ -28,6 +28,7 @@
 #include "yaml-cpp/node/node.h"
 #include "yaml-cpp/node/type.h"
 #include "yaml-cpp/null.h"
+#include "yaml-cpp/fptostring.h"
 
 
 namespace YAML {
@@ -293,7 +294,7 @@ inner_encode(const T& rhs, std::stringstream& stream){
       stream << ".inf";
     }
   } else {
-    stream << rhs;
+    stream << FpToString(rhs, stream.precision());
   }
 }
 
