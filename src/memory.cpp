@@ -10,7 +10,7 @@ void memory_holder::merge(memory_holder& rhs) {
     return;
 
   m_pMemory->merge(*rhs.m_pMemory);
-  rhs.m_pMemory = m_pMemory;
+  // rhs.m_pMemory = m_pMemory; // this was a memory leak
 }
 
 node& memory::create_node() {

@@ -190,6 +190,7 @@ endif()
 
 if(YAML_CPP_BUILD_TESTS)
   add_subdirectory(test)
+  add_subdirectory(mem_test)
 endif()
 
 if(YAML_CPP_BUILD_TOOLS)

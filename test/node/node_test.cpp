@@ -331,14 +331,14 @@ TEST(NodeTest, IteratorOnConstUndefinedNode) {
   }
   EXPECT_EQ(0, count);
 }
-  
+
 TEST(NodeTest, InteratorOnSequence) {
   Node node;
   node[0] = "a";
   node[1] = "b";
   node[2] = "c";
   EXPECT_TRUE(node.IsSequence());
-  
+
   std::size_t count = 0;
   for (iterator it = node.begin(); it != node.end(); ++it)
   {
@@ -347,14 +347,14 @@ TEST(NodeTest, InteratorOnSequence) {
   }
   EXPECT_EQ(3, count);
 }
-  
+
 TEST(NodeTest, ConstInteratorOnSequence) {
   Node node;
   node[0] = "a";
   node[1] = "b";
   node[2] = "c";
   EXPECT_TRUE(node.IsSequence());
-  
+
   std::size_t count = 0;
   for (const_iterator it = node.begin(); it != node.end(); ++it)
   {
@@ -584,7 +584,7 @@ TEST(NodeTest, KeySelfReferenceMap) {
   EXPECT_EQ("value", node[node].as<std::string>());
 }
 
-TEST(NodeTest, SelfReferenceMap) {
+TEST(NodeTest, SelfReferenceMap1) {
   Node node;
   node[node] = node;
   EXPECT_TRUE(node.IsMap());
@@ -592,6 +592,72 @@ TEST(NodeTest, SelfReferenceMap) {
   EXPECT_EQ(node, node[node]);
   EXPECT_EQ(node, node[node][node]);
   EXPECT_EQ(node[node], node[node][node]);
+}
+
+TEST(NodeTest, SelfReferenceMap2) {
+  Node node;
+  node[node] = node;
+  Node n2;
+  node[n2] = n2;
+  n2[node] = node;
+  n2[1] = node;
+  n2[n2] = n2;
+  EXPECT_TRUE(node.IsMap());
+  EXPECT_EQ(2, node.size());
+  EXPECT_TRUE(n2.IsMap());
+  EXPECT_EQ(3, n2.size());
+  EXPECT_EQ(node, node[node]);
+  EXPECT_EQ(node, node[node][node]);
+  EXPECT_EQ(node[node], node[node][node]);
+  EXPECT_EQ(n2, n2[n2]);
+  EXPECT_EQ(n2, n2[n2][n2]);
+  EXPECT_EQ(n2[n2], n2[n2][n2]);
+  EXPECT_EQ(n2[node], node);
+  EXPECT_EQ(n2, n2[node][n2]);
+  EXPECT_EQ(node, node[n2][node]);
+  node.reset();
+  Node n3 = n2[1];
+  EXPECT_EQ(2, n3.size());
+  EXPECT_EQ(3, n2.size());
+  EXPECT_EQ(n3, n3[n3]);
+  EXPECT_EQ(n3, n3[n3][n3]);
+  EXPECT_EQ(n3[n3], n3[n3][n3]);
+  EXPECT_EQ(n2, n2[n2]);
+  EXPECT_EQ(n2, n2[n2][n2]);
+  EXPECT_EQ(n2[n2], n2[n2][n2]);
+  EXPECT_EQ(n2[n3], n3);
+  EXPECT_EQ(n2, n2[n3][n2]);
+  EXPECT_EQ(n3, n3[n2][n3]);
+}
+
+TEST(NodeTest, SelfReferenceMap3) {
+  Node node;
+  node[node] = node;
+  Node n2 = node;
+  EXPECT_TRUE(node.IsMap());
+  EXPECT_EQ(1, node.size());
+  EXPECT_TRUE(n2.IsMap());
+  EXPECT_EQ(1, n2.size());
+  EXPECT_EQ(node, node[node]);
+  EXPECT_EQ(node, node[node][node]);
+  EXPECT_EQ(node[node], node[node][node]);
+  EXPECT_EQ(n2, node[n2]);
+  EXPECT_EQ(n2, n2[node][node]);
+  EXPECT_EQ(node[node], node[node][n2]);
+  node[1] = 2;
+  n2[2] = 3;
+  EXPECT_EQ(n2[1].as<int>(), 2);
+  EXPECT_EQ(node[2].as<int>(), 3);
+  EXPECT_EQ(n2[node][1].as<int>(), 2);
+  EXPECT_EQ(node[node][2].as<int>(), 3);
+  EXPECT_EQ(n2[n2][1].as<int>(), 2);
+  EXPECT_EQ(node[n2][2].as<int>(), 3);
+  node.reset();
+  EXPECT_EQ(n2, n2[n2]);
+  EXPECT_EQ(n2, n2[n2][n2]);
+  EXPECT_EQ(n2[n2], n2[n2][n2]);
+  EXPECT_EQ(n2[1].as<int>(), 2);
+  EXPECT_EQ(n2[2].as<int>(), 3);
 }
 
 TEST(NodeTest, TempMapVariable) {
