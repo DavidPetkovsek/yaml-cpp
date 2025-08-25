@@ -431,9 +431,9 @@ struct convert<std::map<K, V, C, A>> {
     for (const auto& element : node)
 #if defined(__GNUC__) && __GNUC__ < 4
       // workaround for GCC 3:
-      rhs[element.first.template as<K>()] = element.second.template as<V>();
+      rhs.emplace(element.first.template as<K>(), element.second.template as<V>());
 #else
-      rhs[element.first.as<K>()] = element.second.as<V>();
+      rhs.emplace(element.first.as<K>(), element.second.as<V>());
 #endif
     return true;
   }
@@ -457,9 +457,9 @@ struct convert<std::unordered_map<K, V, H, P, A>> {
     for (const auto& element : node)
 #if defined(__GNUC__) && __GNUC__ < 4
       // workaround for GCC 3:
-      rhs[element.first.template as<K>()] = element.second.template as<V>();
+      rhs.emplace(element.first.template as<K>(), element.second.template as<V>());
 #else
-      rhs[element.first.as<K>()] = element.second.as<V>();
+      rhs.emplace(element.first.as<K>(), element.second.as<V>());
 #endif
     return true;
   }
