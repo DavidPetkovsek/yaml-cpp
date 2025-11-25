@@ -241,6 +241,8 @@ class YAML_CPP_API BadConversion : public RepresentationException {
  public:
   explicit BadConversion(const Mark& mark_)
       : RepresentationException(mark_, ErrorMsg::BAD_CONVERSION) {}
+  explicit BadConversion(const Mark& mark_, const std::string &extraMsg)
+      : RepresentationException(mark_, std::string{ErrorMsg::BAD_CONVERSION} + " " + extraMsg) {}
   BadConversion(const BadConversion&) = default;
   ~BadConversion() YAML_CPP_NOEXCEPT override;
 };
@@ -249,6 +251,8 @@ template <typename T>
 class TypedBadConversion : public BadConversion {
  public:
   explicit TypedBadConversion(const Mark& mark_) : BadConversion(mark_) {}
+  explicit TypedBadConversion(const Mark& mark_, const std::string &extraMsg)
+      : BadConversion(mark_, extraMsg) {}
 };
 
 class YAML_CPP_API BadDereference : public RepresentationException {

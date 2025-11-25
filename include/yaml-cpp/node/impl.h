@@ -192,6 +192,8 @@ private:
   T call_emplace_or_decode(std::true_type) const {
     try {
       return createInstanceFromTuple<T>(convert<T>::emplace(node));
+    } catch(const std::exception &error) {
+        throw TypedBadConversion<T>(node.Mark(), error.what());
     } catch (...) {
       throw TypedBadConversion<T>(node.Mark());
     }
