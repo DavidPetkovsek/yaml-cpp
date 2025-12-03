@@ -9,10 +9,6 @@ void memory_holder::merge(memory_holder& rhs) {
   if (m_pMemory == rhs.m_pMemory)
     return;
 
-  if (m_pMemory->size() < rhs.m_pMemory->size()) {
-    std::swap(m_pMemory, rhs.m_pMemory);
-  }
-
   m_pMemory->merge(*rhs.m_pMemory);
   // rhs.m_pMemory = m_pMemory; // this was a memory leak
 }
